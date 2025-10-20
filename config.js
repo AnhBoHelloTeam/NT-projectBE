@@ -12,5 +12,5 @@ module.exports = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   
   // Frontend Configuration
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3001'
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://nt-project-1-plbq.onrender.com'
 };

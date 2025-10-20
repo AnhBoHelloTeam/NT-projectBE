@@ -31,10 +31,26 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3001',
+  'https://nt-project-1-plbq.onrender.com'
+];
+
 app.use(cors({
-  origin: config.FRONTEND_URL,
-  credentials: true
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin === config.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: false
 }));
+
+// Handle preflight requests globally
+app.options('*', cors());
 
 // Body parser middleware
 app.use(bodyParser.json({ limit: '10mb' }));
