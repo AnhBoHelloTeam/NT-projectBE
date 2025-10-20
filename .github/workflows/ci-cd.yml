@@ -38,20 +38,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx (local driver)
+      - name: Set up Docker Buildx (local docker driver)
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker
 
-      - name: Build backend image (no push)
+      - name: Build backend image (no push, no cache export)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: false
           tags: backend-ci:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
 
   deploy_notes:
     needs: build
