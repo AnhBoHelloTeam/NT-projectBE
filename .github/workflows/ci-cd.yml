@@ -1,0 +1,70 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx (local driver)
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: backend-ci:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy_notes:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Render (manual)
+        run: |
+          echo "🚀 Backend ready for Render."
+          echo "Render will build from render.yaml in repo root."
+          echo "1) Create a Web Service on Render"
+          echo "2) Connect this repo"
+          echo "3) Ensure Docker build is enabled (render.yaml)"
+          echo "4) Set env vars: PORT=3000, NODE_ENV=production, MONGODB_URI, JWT_SECRET"
+          echo "5) Trigger deploy"
+
