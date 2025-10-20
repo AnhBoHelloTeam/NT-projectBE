@@ -3,8 +3,26 @@ name: Backend CI
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - '**/*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'render.yaml'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - '**/*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'render.yaml'
+      - '.github/workflows/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -20,37 +38,27 @@ jobs:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --prefer-offline --no-audit --fund=false
 
       - name: Run tests
-        run: npm test
+        run: |
+          npm test -- --maxWorkers=50%
         env:
           NODE_ENV: test
 
+  # Skip Docker build in CI to minimize time; Render will build from repo
   build:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx (local docker driver)
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker
-
-      - name: Build backend image (no push, no cache export)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: false
-          tags: backend-ci:latest
-          load: true
+      - name: Skip docker build (handled by Render)
+        run: echo "Skipping Docker build in CI. Render builds from render.yaml."
 
   deploy_notes:
     needs: build
